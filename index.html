@@ -1,0 +1,1896 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planificador Financiero del Hogar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --secondary: #ec4899;
+            --accent: #14b8a6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg-main: #0f172a;
+            --bg-card: rgba(255, 255, 255, 0.05);
+            --bg-card-hover: rgba(255, 255, 255, 0.08);
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #64748b;
+            --border: rgba(255, 255, 255, 0.1);
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 2rem;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(20, 184, 166, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            margin-bottom: 3rem;
+            animation: fadeInDown 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        h1 {
+            font-family: 'Sora', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #6366f1 0%, #ec4899 50%, #14b8a6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.03em;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .col-span-3 { grid-column: span 3; }
+        .col-span-4 { grid-column: span 4; }
+        .col-span-6 { grid-column: span 6; }
+        .col-span-8 { grid-column: span 8; }
+        .col-span-12 { grid-column: span 12; }
+
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 2rem;
+            border: 1px solid var(--glass-border);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.15);
+            background: var(--bg-card-hover);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.15s; }
+        .card:nth-child(3) { animation-delay: 0.2s; }
+        .card:nth-child(4) { animation-delay: 0.25s; }
+        .card:nth-child(5) { animation-delay: 0.3s; }
+        .card:nth-child(6) { animation-delay: 0.35s; }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+
+        .card-title {
+            font-family: 'Sora', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+        }
+
+        .input-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+            background: var(--glass-bg);
+            color: var(--text-primary);
+            backdrop-filter: blur(10px);
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--bg-card);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, var(--danger), #dc2626);
+            color: white;
+        }
+
+        .btn-reset:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            font-family: 'Inter', sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--accent), var(--success));
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(20, 184, 166, 0.4);
+        }
+
+        .btn-small {
+            padding: 0.625rem 1.25rem;
+            font-size: 0.875rem;
+        }
+
+        .expense-item {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            align-items: center;
+            animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .expense-item input {
+            flex: 1;
+        }
+
+        .expense-item input:first-child {
+            flex: 2;
+        }
+
+        .btn-remove {
+            background: linear-gradient(135deg, var(--danger), #dc2626);
+            color: white;
+            padding: 0.625rem 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .btn-remove:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+
+        .metric-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            font-family: 'Sora', sans-serif;
+            background: linear-gradient(135deg, var(--primary-light), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 500;
+        }
+
+        .metric-sublabel {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .result-box {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(236, 72, 153, 0.2));
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            padding: 2rem;
+            border-radius: 16px;
+            text-align: center;
+            margin-top: 1.5rem;
+            animation: pulse 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .result-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+
+        .result-value {
+            font-size: 3rem;
+            font-weight: 800;
+            font-family: 'Sora', sans-serif;
+            background: linear-gradient(135deg, #818cf8, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .result-small {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 350px;
+            margin-top: 1.5rem;
+        }
+
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border: 1px solid;
+            animation: slideIn 0.4s ease-out;
+        }
+
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: #fbbf24;
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: #34d399;
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .alert-info {
+            background: rgba(99, 102, 241, 0.1);
+            color: #a5b4fc;
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: #f87171;
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .info-section {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .info-title {
+            font-family: 'Sora', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-content {
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--glass-bg);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 4px;
+            transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .stat-comparison {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: var(--glass-bg);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-comparison-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .stat-comparison-value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+        }
+
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+        }
+
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.02);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 1400px) {
+            .col-span-3, .col-span-4, .col-span-6, .col-span-8 {
+                grid-column: span 6;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .col-span-3, .col-span-4, .col-span-6, .col-span-8, .col-span-12 {
+                grid-column: span 12;
+            }
+
+            .expense-item {
+                flex-direction: column;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💎 Planificador Financiero</h1>
+            <p class="subtitle">Gestiona vuestras finanzas del hogar y alcanzad objetivos juntos</p>
+        </header>
+
+        <!-- Primera fila: Ingresos y Gastos -->
+        <div class="grid">
+            <div class="card col-span-4">
+                <div class="card-header">
+                    <div class="card-icon">💵</div>
+                    <h2 class="card-title">Ingresos Mensuales</h2>
+                </div>
+                <div class="input-group">
+                    <label for="ingreso1">Ingreso Persona 1 (€/mes)</label>
+                    <input type="text" id="ingreso1" placeholder="2.000" class="format-number">
+                </div>
+                <div class="input-group">
+                    <label for="ingreso2">Ingreso Persona 2 (€/mes)</label>
+                    <input type="text" id="ingreso2" placeholder="1.800" class="format-number">
+                </div>
+                <div class="result-box">
+                    <div class="result-label">Ingreso Total Mensual</div>
+                    <div class="result-value" id="ingresoTotal">0 €</div>
+                </div>
+            </div>
+
+            <div class="card col-span-4">
+                <div class="card-header">
+                    <div class="card-icon">🏠</div>
+                    <h2 class="card-title">Gastos Fijos</h2>
+                </div>
+                <div id="expensesList">
+                    <div class="expense-item">
+                        <input type="text" placeholder="Concepto (ej: Alquiler)" class="expense-name">
+                        <input type="text" placeholder="€" class="expense-amount format-number">
+                        <button class="btn-remove" onclick="removeExpense(this)">✕</button>
+                    </div>
+                </div>
+                <button class="btn btn-secondary btn-small" onclick="addExpense()">+ Agregar Gasto</button>
+                <div class="result-box">
+                    <div class="result-label">Total Gastos Fijos</div>
+                    <div class="result-value" id="gastoTotal">0 €</div>
+                </div>
+            </div>
+
+            <div class="card col-span-4">
+                <div class="card-header">
+                    <div class="card-icon">📊</div>
+                    <h2 class="card-title">Métricas Clave</h2>
+                </div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="calcular()">🔄 Calcular Todo</button>
+                <button class="btn btn-reset btn-small" style="width: 100%; margin-top: 0.75rem;" onclick="resetear()">🗑️ Borrar Todo</button>
+                
+                <div class="metrics-grid" style="grid-template-columns: 1fr 1fr;">
+                    <div class="metric-card">
+                        <div class="metric-value" id="ahorroDisponible">0 €</div>
+                        <div class="metric-label">Ahorro Disponible</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="porcentajeAhorro">0%</div>
+                        <div class="metric-label">% de Ahorro</div>
+                    </div>
+                </div>
+
+                <div id="alertas"></div>
+            </div>
+        </div>
+
+        <!-- Segunda fila: Capacidad de endeudamiento y distribución -->
+        <div class="grid">
+            <div class="card col-span-6">
+                <div class="card-header">
+                    <div class="card-icon">🏦</div>
+                    <h2 class="card-title">Capacidad de Endeudamiento</h2>
+                </div>
+                <div class="info-content">
+                    <p style="margin-bottom: 1rem;">Los bancos en España suelen aprobar préstamos cuya cuota mensual no supere el <strong>30-40%</strong> de vuestros ingresos netos.</p>
+                </div>
+                
+                <div class="stat-comparison">
+                    <span class="stat-comparison-label">Ingresos mensuales netos</span>
+                    <span class="stat-comparison-value" id="capacidadIngresos">0 €</span>
+                </div>
+                <div class="stat-comparison">
+                    <span class="stat-comparison-label">Cuota máxima recomendada (35%)</span>
+                    <span class="stat-comparison-value" id="capacidadCuota35">0 €</span>
+                </div>
+                <div class="stat-comparison">
+                    <span class="stat-comparison-label">Rango de endeudamiento (30-40%)</span>
+                    <span class="stat-comparison-value" id="capacidadRango">0 € - 0 €</span>
+                </div>
+
+                <div class="info-section">
+                    <div class="info-title">💡 ¿Qué significa esto?</div>
+                    <div class="info-content">
+                        <p><strong id="capacidadCuotaMax">0 €</strong> es la cuota mensual máxima que probablemente os aprobarán para una hipoteca o préstamo.</p>
+                        <p style="margin-top: 0.5rem;">Con una hipoteca a 25 años al 3% de interés, esto equivale aproximadamente a un préstamo de <strong id="capacidadPrestamo">0 €</strong>.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card col-span-6">
+                <div class="card-header">
+                    <div class="card-icon">🎯</div>
+                    <h2 class="card-title">Distribución de Gastos</h2>
+                </div>
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="gastosChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tercera fila: Análisis financiero avanzado -->
+        <div class="grid">
+            <div class="card col-span-12">
+                <div class="card-header">
+                    <div class="card-icon">📈</div>
+                    <h2 class="card-title">Análisis Financiero Completo</h2>
+                </div>
+
+                <div class="metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+                    <div class="metric-card">
+                        <div class="metric-value" id="ratioGastos">0%</div>
+                        <div class="metric-label">Ratio de Gastos</div>
+                        <div class="metric-sublabel" id="ratioGastosLabel">Sobre ingresos</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="ahorroAnual">0 €</div>
+                        <div class="metric-label">Ahorro Proyectado</div>
+                        <div class="metric-sublabel">Anual</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="patrimonio5">0 €</div>
+                        <div class="metric-label">Patrimonio en 5 años</div>
+                        <div class="metric-sublabel" id="patrimonio5Label">Sin inversión</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="tasaAhorro">0%</div>
+                        <div class="metric-label">Tasa de Ahorro</div>
+                        <div class="metric-sublabel" id="tasaAhorroLabel">vs. recomendado</div>
+                    </div>
+                </div>
+
+                <div class="info-section">
+                    <div class="info-title">📚 Recomendaciones Financieras</div>
+                    <div class="info-content">
+                        <div class="stat-comparison">
+                            <span class="stat-comparison-label">📌 Regla 50/30/20</span>
+                            <span class="stat-comparison-value" id="regla503020">50% necesidades, 30% deseos, 20% ahorro</span>
+                        </div>
+                        <div class="stat-comparison">
+                            <span class="stat-comparison-label">📌 Fondo de emergencia recomendado</span>
+                            <span class="stat-comparison-value" id="fondoEmergencia">3-6 meses de gastos</span>
+                        </div>
+                        <div class="stat-comparison">
+                            <span class="stat-comparison-label">📌 Vuestra situación de ahorro</span>
+                            <span class="stat-comparison-value" id="situacionAhorro"><span class="badge badge-success">Evaluando...</span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cuarta fila: Calculadoras de objetivos -->
+        <div class="grid">
+            <div class="card col-span-6">
+                <div class="card-header">
+                    <div class="card-icon">🎯</div>
+                    <h2 class="card-title">Calculadora: Tiempo para Objetivo</h2>
+                </div>
+                <div class="input-group">
+                    <label for="objetivoMonto">¿Cuánto dinero necesitáis? (€)</label>
+                    <input type="text" id="objetivoMonto" placeholder="50.000" class="format-number">
+                </div>
+                <div class="input-group">
+                    <label for="ahorroMensual">¿Cuánto podéis ahorrar al mes? (€)</label>
+                    <input type="text" id="ahorroMensual" placeholder="1.000" class="format-number">
+                </div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="calcularObjetivo()">Calcular Tiempo</button>
+                <div id="resultadoObjetivo"></div>
+            </div>
+
+            <div class="card col-span-6">
+                <div class="card-header">
+                    <div class="card-icon">⏱️</div>
+                    <h2 class="card-title">Calculadora: Ahorro por Plazo</h2>
+                </div>
+                <div class="input-group">
+                    <label for="metaMonto">Meta de dinero (€)</label>
+                    <input type="text" id="metaMonto" placeholder="50.000" class="format-number">
+                </div>
+                <div class="input-group">
+                    <label for="plazoMeses">Plazo deseado (meses)</label>
+                    <input type="text" id="plazoMeses" placeholder="60" class="format-number">
+                </div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="calcularAhorroPorPlazo()">Calcular Ahorro Necesario</button>
+                <div id="resultadoPlazo"></div>
+            </div>
+        </div>
+
+        <!-- Quinta fila: Gráficos de proyección -->
+        <div class="grid">
+            <div class="card col-span-6">
+                <div class="card-header">
+                    <div class="card-icon">📈</div>
+                    <h2 class="card-title">Proyección de Ahorro</h2>
+                </div>
+                <div class="chart-container">
+                    <canvas id="proyeccionChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card col-span-6">
+                <div class="card-header">
+                    <div class="card-icon">💰</div>
+                    <h2 class="card-title">Evolución Anual del Patrimonio</h2>
+                </div>
+                <div class="chart-container">
+                    <canvas id="patrimonioChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sexta fila: Simulador de inversión -->
+        <div class="grid">
+            <div class="card col-span-6">
+                <div class="card-header">
+                    <div class="card-icon">📊</div>
+                    <h2 class="card-title">Simulador de Inversión</h2>
+                </div>
+                <div class="info-content" style="margin-bottom: 1rem;">
+                    <p>Simulad cómo crecería vuestro dinero si lo invertís con un rendimiento anual estimado.</p>
+                </div>
+                <div class="input-group">
+                    <label for="inversionInicial">Inversión inicial (€)</label>
+                    <input type="text" id="inversionInicial" placeholder="5.000" class="format-number">
+                </div>
+                <div class="input-group">
+                    <label for="aportacionMensual">Aportación mensual (€)</label>
+                    <input type="text" id="aportacionMensual" placeholder="500" class="format-number">
+                </div>
+                <div class="input-group">
+                    <label for="rendimientoAnual">Rendimiento anual estimado (%)</label>
+                    <input type="text" id="rendimientoAnual" placeholder="5" class="format-number">
+                </div>
+                <div class="input-group">
+                    <label for="plazoInversion">Plazo (años)</label>
+                    <input type="text" id="plazoInversion" placeholder="10" class="format-number">
+                </div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="calcularInversion()">Calcular Rendimiento</button>
+                <div id="resultadoInversion"></div>
+            </div>
+
+            <div class="card col-span-6">
+                <div class="card-header">
+                    <div class="card-icon">💸</div>
+                    <h2 class="card-title">Crecimiento con Inversión</h2>
+                </div>
+                <div class="chart-container">
+                    <canvas id="inversionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Séptima fila: Comparación de escenarios -->
+        <div class="grid">
+            <div class="card col-span-12">
+                <div class="card-header">
+                    <div class="card-icon">🔍</div>
+                    <h2 class="card-title">Comparación de Escenarios "¿Qué pasaría si...?"</h2>
+                </div>
+                <div class="info-content" style="margin-bottom: 1.5rem;">
+                    <p>Comparad diferentes escenarios de ahorro para ver el impacto a largo plazo.</p>
+                </div>
+                <div class="chart-container" style="height: 400px;">
+                    <canvas id="escenariosChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Octava fila: Benchmarks españoles -->
+        <div class="grid">
+            <div class="card col-span-12">
+                <div class="card-header">
+                    <div class="card-icon">🇪🇸</div>
+                    <h2 class="card-title">Comparación con la Media Española</h2>
+                </div>
+                <div class="metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+                    <div class="metric-card">
+                        <div class="metric-value" id="vuestroAhorro">0%</div>
+                        <div class="metric-label">Vuestra Tasa de Ahorro</div>
+                        <div class="metric-sublabel">Vuestro ahorro mensual</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" style="background: linear-gradient(135deg, #14b8a6, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">12-15%</div>
+                        <div class="metric-label">Media España</div>
+                        <div class="metric-sublabel">Tasa de ahorro típica</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="diferenciaMedia">0%</div>
+                        <div class="metric-label">Diferencia</div>
+                        <div class="metric-sublabel" id="diferenciaMediLabel">vs. media española</div>
+                    </div>
+                </div>
+                <div class="info-section">
+                    <div class="info-title">📊 Datos de Referencia España (2024)</div>
+                    <div class="info-content">
+                        <div class="stat-comparison">
+                            <span class="stat-comparison-label">Tasa de ahorro media de hogares</span>
+                            <span class="stat-comparison-value">12-15%</span>
+                        </div>
+                        <div class="stat-comparison">
+                            <span class="stat-comparison-label">Salario medio neto en España</span>
+                            <span class="stat-comparison-value">~2.000 €/mes</span>
+                        </div>
+                        <div class="stat-comparison">
+                            <span class="stat-comparison-label">Coste medio vida (alquiler + gastos)</span>
+                            <span class="stat-comparison-value">1.200-1.500 €/mes</span>
+                        </div>
+                        <div class="stat-comparison">
+                            <span class="stat-comparison-label">Precio medio vivienda</span>
+                            <span class="stat-comparison-value">~250.000 € (varía por ciudad)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let proyeccionChart = null;
+        let gastosChart = null;
+        let patrimonioChart = null;
+        let inversionChart = null;
+        let escenariosChart = null;
+
+        // Configuración global de Chart.js
+        Chart.defaults.color = '#cbd5e1';
+        Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
+        Chart.defaults.font.family = 'Inter';
+
+        // Función para formatear números con separadores de miles mientras se escribe
+        function formatNumberInput(input) {
+            let value = input.value.replace(/\./g, ''); // Eliminar puntos existentes
+            value = value.replace(/[^\d]/g, ''); // Solo números
+            
+            if (value === '') {
+                input.value = '';
+                return;
+            }
+            
+            // Formatear con separadores de miles
+            const formatted = parseInt(value).toLocaleString('es-ES');
+            
+            // Guardar posición del cursor
+            const cursorPos = input.selectionStart;
+            const oldLength = input.value.length;
+            
+            input.value = formatted;
+            
+            // Ajustar cursor
+            const newLength = formatted.length;
+            const diff = newLength - oldLength;
+            input.setSelectionRange(cursorPos + diff, cursorPos + diff);
+        }
+
+        function setupNumberFormatting() {
+            // Seleccionar todos los inputs que necesitan formateo
+            const selector = 'input.format-number, .expense-amount, #ingreso1, #ingreso2';
+            
+            // Configurar los inputs existentes
+            document.querySelectorAll(selector).forEach(input => {
+                // Formatear valor inicial si existe
+                if (input.value) {
+                    formatNumberInput(input);
+                }
+                
+                // Remover listeners previos si existen
+                input.removeEventListener('input', input._formatHandler);
+                input.removeEventListener('blur', input._blurHandler);
+                
+                // Crear nuevos handlers
+                input._formatHandler = function(e) {
+                    formatNumberInput(e.target);
+                };
+                input._blurHandler = function(e) {
+                    if (e.target.value) {
+                        formatNumberInput(e.target);
+                    }
+                };
+                
+                // Agregar eventos
+                input.addEventListener('input', input._formatHandler);
+                input.addEventListener('blur', input._blurHandler);
+            });
+        }
+
+        // Función para obtener valor numérico de un input formateado
+        function getNumericValue(elementId) {
+            const element = document.getElementById(elementId);
+            if (!element) return 0;
+            const value = element.value.replace(/\./g, '').replace(/,/g, '.');
+            return parseFloat(value) || 0;
+        }
+
+        // Función para obtener valor numérico de inputs con clase
+        function getNumericValueFromInput(input) {
+            const value = input.value.replace(/\./g, '').replace(/,/g, '.');
+            return parseFloat(value) || 0;
+        }
+
+        // Cargar datos guardados
+        window.onload = function() {
+            loadData();
+            // Configurar formateo DESPUÉS de cargar datos
+            setTimeout(() => {
+                setupNumberFormatting();
+                calcular();
+            }, 100);
+        };
+
+        function loadData() {
+            const data = JSON.parse(localStorage.getItem('finanzasData') || '{}');
+            if (data.ingreso1) {
+                const value = parseFloat(data.ingreso1);
+                if (!isNaN(value)) {
+                    document.getElementById('ingreso1').value = parseInt(value).toLocaleString('es-ES');
+                }
+            }
+            if (data.ingreso2) {
+                const value = parseFloat(data.ingreso2);
+                if (!isNaN(value)) {
+                    document.getElementById('ingreso2').value = parseInt(value).toLocaleString('es-ES');
+                }
+            }
+            if (data.expenses && data.expenses.length > 0) {
+                const container = document.getElementById('expensesList');
+                container.innerHTML = '';
+                data.expenses.forEach(exp => {
+                    addExpenseWithData(exp.name, exp.amount);
+                });
+            }
+        }
+
+        function saveData() {
+            const expenses = [];
+            document.querySelectorAll('.expense-item').forEach(item => {
+                const name = item.querySelector('.expense-name').value;
+                const amount = parseFloat(item.querySelector('.expense-amount').value) || 0;
+                if (name || amount > 0) {
+                    expenses.push({ name, amount });
+                }
+            });
+
+            const data = {
+                ingreso1: document.getElementById('ingreso1').value,
+                ingreso2: document.getElementById('ingreso2').value,
+                expenses: expenses
+            };
+            localStorage.setItem('finanzasData', JSON.stringify(data));
+        }
+
+        function addExpense() {
+            const container = document.getElementById('expensesList');
+            const div = document.createElement('div');
+            div.className = 'expense-item';
+            div.innerHTML = `
+                <input type="text" placeholder="Concepto (ej: Gimnasio)" class="expense-name">
+                <input type="text" placeholder="€" class="expense-amount format-number">
+                <button class="btn-remove" onclick="removeExpense(this)">✕</button>
+            `;
+            container.appendChild(div);
+            
+            // Aplicar formateo al nuevo input
+            const newInput = div.querySelector('.expense-amount');
+            newInput.addEventListener('input', function(e) {
+                formatNumberInput(e.target);
+            });
+            newInput.addEventListener('blur', function(e) {
+                if (e.target.value) {
+                    formatNumberInput(e.target);
+                }
+            });
+        }
+
+        function addExpenseWithData(name, amount) {
+            const container = document.getElementById('expensesList');
+            const div = document.createElement('div');
+            div.className = 'expense-item';
+            const formattedAmount = amount > 0 ? parseInt(amount).toLocaleString('es-ES') : '';
+            div.innerHTML = `
+                <input type="text" placeholder="Concepto" class="expense-name" value="${name}">
+                <input type="text" placeholder="€" class="expense-amount format-number" value="${formattedAmount}">
+                <button class="btn-remove" onclick="removeExpense(this)">✕</button>
+            `;
+            container.appendChild(div);
+            
+            // Aplicar formateo al nuevo input
+            const newInput = div.querySelector('.expense-amount');
+            newInput.addEventListener('input', function(e) {
+                formatNumberInput(e.target);
+            });
+            newInput.addEventListener('blur', function(e) {
+                if (e.target.value) {
+                    formatNumberInput(e.target);
+                }
+            });
+        }
+
+        function removeExpense(button) {
+            button.parentElement.remove();
+            calcular();
+        }
+
+        function calcular() {
+            // Calcular ingresos usando valores formateados
+            const ingreso1 = getNumericValue('ingreso1');
+            const ingreso2 = getNumericValue('ingreso2');
+            const ingresoTotal = ingreso1 + ingreso2;
+
+            // Calcular gastos
+            let gastoTotal = 0;
+            const expensesData = [];
+            document.querySelectorAll('.expense-item').forEach(item => {
+                const name = item.querySelector('.expense-name').value || 'Sin nombre';
+                const amount = getNumericValueFromInput(item.querySelector('.expense-amount'));
+                gastoTotal += amount;
+                if (amount > 0) {
+                    expensesData.push({ name, amount });
+                }
+            });
+
+            // Calcular ahorro
+            const ahorroDisponible = ingresoTotal - gastoTotal;
+            const porcentajeAhorro = ingresoTotal > 0 ? (ahorroDisponible / ingresoTotal * 100) : 0;
+            const ratioGastos = ingresoTotal > 0 ? (gastoTotal / ingresoTotal * 100) : 0;
+
+            // Determinar jerga (singular o plural)
+            const numPersonas = (ingreso1 > 0 ? 1 : 0) + (ingreso2 > 0 ? 1 : 0);
+            const verboEstar = numPersonas === 1 ? 'estás' : 'estáis';
+            const verboAhorrar = numPersonas === 1 ? 'ahorras' : 'ahorráis';
+            const posesivo = numPersonas === 1 ? 'tu' : 'vuestro';
+            const posesivoPl = numPersonas === 1 ? 'tus' : 'vuestros';
+
+            // Actualizar UI principal
+            document.getElementById('ingresoTotal').textContent = formatEuro(ingresoTotal);
+            document.getElementById('gastoTotal').textContent = formatEuro(gastoTotal);
+            document.getElementById('ahorroDisponible').textContent = formatEuro(ahorroDisponible);
+            document.getElementById('porcentajeAhorro').textContent = porcentajeAhorro.toFixed(1) + '%';
+            document.getElementById('ratioGastos').textContent = ratioGastos.toFixed(1) + '%';
+
+            // Cálculos avanzados
+            const ahorroAnual = ahorroDisponible * 12;
+            const patrimonio5 = ahorroAnual * 5;
+            document.getElementById('ahorroAnual').textContent = formatEuro(ahorroAnual);
+            document.getElementById('patrimonio5').textContent = formatEuro(patrimonio5);
+            document.getElementById('tasaAhorro').textContent = porcentajeAhorro.toFixed(1) + '%';
+
+            // Etiquetas con jerga correcta
+            let ratioLabel = 'Excelente';
+            if (ratioGastos > 70) ratioLabel = 'Alto';
+            else if (ratioGastos > 50) ratioLabel = 'Moderado';
+            document.getElementById('ratioGastosLabel').textContent = ratioLabel;
+            document.getElementById('patrimonio5Label').textContent = 'Sin intereses';
+
+            // Evaluación de situación de ahorro
+            let situacionBadge = '';
+            if (porcentajeAhorro >= 20) {
+                situacionBadge = '<span class="badge badge-success">Excelente</span>';
+            } else if (porcentajeAhorro >= 10) {
+                situacionBadge = '<span class="badge badge-warning">Buena</span>';
+            } else if (porcentajeAhorro > 0) {
+                situacionBadge = '<span class="badge badge-warning">Mejorable</span>';
+            } else {
+                situacionBadge = '<span class="badge badge-danger">Déficit</span>';
+            }
+            document.getElementById('situacionAhorro').innerHTML = situacionBadge;
+
+            // Capacidad de endeudamiento
+            const cuota30 = ingresoTotal * 0.30;
+            const cuota35 = ingresoTotal * 0.35;
+            const cuota40 = ingresoTotal * 0.40;
+            
+            // Estimación de préstamo a 25 años al 3%
+            const meses = 25 * 12;
+            const tasaMensual = 0.03 / 12;
+            const prestamoEstimado = cuota35 * ((1 - Math.pow(1 + tasaMensual, -meses)) / tasaMensual);
+
+            document.getElementById('capacidadIngresos').textContent = formatEuro(ingresoTotal);
+            document.getElementById('capacidadCuota35').textContent = formatEuro(cuota35);
+            document.getElementById('capacidadRango').textContent = formatEuro(cuota30) + ' - ' + formatEuro(cuota40);
+            document.getElementById('capacidadCuotaMax').textContent = formatEuro(cuota35);
+            document.getElementById('capacidadPrestamo').textContent = formatEuro(prestamoEstimado);
+
+            // Fondo de emergencia
+            const fondoMin = gastoTotal * 3;
+            const fondoMax = gastoTotal * 6;
+            document.getElementById('fondoEmergencia').textContent = formatEuro(fondoMin) + ' - ' + formatEuro(fondoMax);
+
+            // Regla 50/30/20
+            const necesidades = ingresoTotal * 0.50;
+            const deseos = ingresoTotal * 0.30;
+            const ahorroRecomendado = ingresoTotal * 0.20;
+            document.getElementById('regla503020').textContent = 
+                formatEuro(necesidades) + ' / ' + formatEuro(deseos) + ' / ' + formatEuro(ahorroRecomendado);
+
+            // Benchmarks españoles
+            document.getElementById('vuestroAhorro').textContent = porcentajeAhorro.toFixed(1) + '%';
+            const mediaEspana = 13.5; // Promedio 12-15%
+            const diferencia = porcentajeAhorro - mediaEspana;
+            document.getElementById('diferenciaMedia').textContent = (diferencia > 0 ? '+' : '') + diferencia.toFixed(1) + '%';
+            
+            let labelDif = 'Por encima de la media';
+            if (diferencia < -5) labelDif = 'Muy por debajo';
+            else if (diferencia < 0) labelDif = 'Por debajo de la media';
+            else if (diferencia < 5) labelDif = 'Similar a la media';
+            document.getElementById('diferenciaMediLabel').textContent = labelDif;
+
+            // Actualizar placeholder de ahorro mensual
+            const ahorroPlaceholder = Math.max(0, ahorroDisponible);
+            if (ahorroPlaceholder > 0) {
+                document.getElementById('ahorroMensual').placeholder = parseInt(ahorroPlaceholder).toLocaleString('es-ES');
+            }
+
+            // Mostrar alertas con jerga correcta
+            const alertasDiv = document.getElementById('alertas');
+            alertasDiv.innerHTML = '';
+            
+            if (ahorroDisponible < 0) {
+                alertasDiv.innerHTML = `<div class="alert alert-danger">⚠️ Atención: ${posesivoPl} gastos superan los ingresos. Revisad ${posesivo} presupuesto.</div>`;
+            } else if (porcentajeAhorro > 30) {
+                alertasDiv.innerHTML = `<div class="alert alert-success">🎉 ¡Excelente! ${verboEstar.charAt(0).toUpperCase() + verboEstar.slice(1)} ahorrando más del 30% de ${posesivoPl} ingresos.</div>`;
+            } else if (porcentajeAhorro > 20) {
+                alertasDiv.innerHTML = `<div class="alert alert-success">✅ Muy bien. ${verboEstar.charAt(0).toUpperCase() + verboEstar.slice(1)} ahorrando más del 20% de ${posesivoPl} ingresos.</div>`;
+            } else if (porcentajeAhorro > 10) {
+                alertasDiv.innerHTML = `<div class="alert alert-info">💡 ${verboAhorrar.charAt(0).toUpperCase() + verboAhorrar.slice(1)} un ${porcentajeAhorro.toFixed(1)}%. Considerad aumentar el ahorro al 20%.</div>`;
+            } else if (porcentajeAhorro > 0) {
+                alertasDiv.innerHTML = `<div class="alert alert-warning">⚠️ ${verboAhorrar.charAt(0).toUpperCase() + verboAhorrar.slice(1)} menos del 10%. Es recomendable ahorrar al menos el 20%.</div>`;
+            }
+
+            // Gráfico de distribución de gastos
+            generarGraficoGastos(expensesData, ahorroDisponible);
+
+            // Gráfico de patrimonio anual
+            generarGraficoPatrimonio(ahorroDisponible);
+
+            // Gráfico de escenarios
+            generarGraficoEscenarios(ahorroDisponible);
+
+            // Guardar datos
+            saveData();
+        }
+
+        function resetear() {
+            if (confirm('¿Estás seguro de que quieres borrar todos los datos?')) {
+                localStorage.removeItem('finanzasData');
+                document.getElementById('ingreso1').value = '';
+                document.getElementById('ingreso2').value = '';
+                document.getElementById('expensesList').innerHTML = `
+                    <div class="expense-item">
+                        <input type="text" placeholder="Concepto (ej: Alquiler)" class="expense-name">
+                        <input type="text" placeholder="€" class="expense-amount format-number">
+                        <button class="btn-remove" onclick="removeExpense(this)">✕</button>
+                    </div>
+                `;
+                setTimeout(() => {
+                    setupNumberFormatting();
+                    calcular();
+                }, 50);
+            }
+        }
+
+        function calcularObjetivo() {
+            const objetivo = getNumericValue('objetivoMonto');
+            const ahorroMensual = getNumericValue('ahorroMensual');
+
+            if (objetivo <= 0 || ahorroMensual <= 0) {
+                document.getElementById('resultadoObjetivo').innerHTML = 
+                    '<div class="alert alert-warning">Por favor, completad todos los campos.</div>';
+                return;
+            }
+
+            const meses = Math.ceil(objetivo / ahorroMensual);
+            const años = Math.floor(meses / 12);
+            const mesesRestantes = meses % 12;
+
+            let tiempoTexto = '';
+            if (años > 0) {
+                tiempoTexto = `${años} año${años > 1 ? 's' : ''}`;
+                if (mesesRestantes > 0) {
+                    tiempoTexto += ` y ${mesesRestantes} mes${mesesRestantes > 1 ? 'es' : ''}`;
+                }
+            } else {
+                tiempoTexto = `${mesesRestantes} mes${mesesRestantes > 1 ? 'es' : ''}`;
+            }
+
+            document.getElementById('resultadoObjetivo').innerHTML = `
+                <div class="result-box">
+                    <div class="result-label">Tiempo para alcanzar ${formatEuro(objetivo)}</div>
+                    <div class="result-value">${tiempoTexto}</div>
+                    <div class="result-small">${formatNumber(meses)} meses en total</div>
+                </div>
+            `;
+
+            generarGraficoProyeccion(ahorroMensual, objetivo, meses);
+        }
+
+        function calcularAhorroPorPlazo() {
+            const meta = getNumericValue('metaMonto');
+            const plazo = getNumericValue('plazoMeses');
+
+            if (meta <= 0 || plazo <= 0) {
+                document.getElementById('resultadoPlazo').innerHTML = 
+                    '<div class="alert alert-warning">Por favor, completad todos los campos.</div>';
+                return;
+            }
+
+            const ahorroNecesario = meta / plazo;
+            const años = Math.floor(plazo / 12);
+            const meses = plazo % 12;
+
+            let plazoTexto = '';
+            if (años > 0) {
+                plazoTexto = `${años} año${años > 1 ? 's' : ''}`;
+                if (meses > 0) {
+                    plazoTexto += ` y ${meses} mes${meses > 1 ? 'es' : ''}`;
+                }
+            } else {
+                plazoTexto = `${meses} mes${meses > 1 ? 'es' : ''}`;
+            }
+
+            document.getElementById('resultadoPlazo').innerHTML = `
+                <div class="result-box">
+                    <div class="result-label">Ahorro mensual necesario</div>
+                    <div class="result-value">${formatEuro(ahorroNecesario)}</div>
+                    <div class="result-small">Para juntar ${formatEuro(meta)} en ${plazoTexto}</div>
+                </div>
+            `;
+
+            generarGraficoProyeccion(ahorroNecesario, meta, plazo);
+        }
+
+        function calcularInversion() {
+            const inversionInicial = getNumericValue('inversionInicial');
+            const aportacionMensual = getNumericValue('aportacionMensual');
+            const rendimientoAnual = getNumericValue('rendimientoAnual');
+            const plazoAnios = getNumericValue('plazoInversion');
+
+            if (rendimientoAnual <= 0 || plazoAnios <= 0) {
+                document.getElementById('resultadoInversion').innerHTML = 
+                    '<div class="alert alert-warning">Por favor, completad todos los campos.</div>';
+                return;
+            }
+
+            const tasaMensual = rendimientoAnual / 100 / 12;
+            const meses = plazoAnios * 12;
+
+            // Calcular valor futuro con interés compuesto
+            let valorFinal = inversionInicial * Math.pow(1 + tasaMensual, meses);
+            
+            // Añadir aportaciones mensuales con interés compuesto
+            if (aportacionMensual > 0) {
+                valorFinal += aportacionMensual * ((Math.pow(1 + tasaMensual, meses) - 1) / tasaMensual);
+            }
+
+            const totalAportado = inversionInicial + (aportacionMensual * meses);
+            const ganancias = valorFinal - totalAportado;
+            const rentabilidad = totalAportado > 0 ? (ganancias / totalAportado * 100) : 0;
+
+            document.getElementById('resultadoInversion').innerHTML = `
+                <div class="result-box">
+                    <div class="result-label">Valor final después de ${plazoAnios} años</div>
+                    <div class="result-value">${formatEuro(valorFinal)}</div>
+                    <div class="result-small">
+                        Aportado: ${formatEuro(totalAportado)} | 
+                        Ganancias: ${formatEuro(ganancias)} (${rentabilidad.toFixed(1)}%)
+                    </div>
+                </div>
+            `;
+
+            generarGraficoInversion(inversionInicial, aportacionMensual, rendimientoAnual, plazoAnios);
+        }
+
+        function generarGraficoInversion(inicial, mensual, rendimiento, años) {
+            const labels = [];
+            const dataSinInteres = [];
+            const dataConInteres = [];
+            
+            const tasaMensual = rendimiento / 100 / 12;
+            const meses = años * 12;
+
+            let acumuladoSinInteres = inicial;
+            let acumuladoConInteres = inicial;
+
+            for (let mes = 0; mes <= meses; mes++) {
+                if (mes === 0) {
+                    labels.push('Inicio');
+                } else if (mes % (años <= 5 ? 6 : 12) === 0) {
+                    labels.push(`${Math.floor(mes/12)}a`);
+                } else {
+                    labels.push('');
+                }
+
+                dataSinInteres.push(acumuladoSinInteres);
+                dataConInteres.push(acumuladoConInteres);
+
+                if (mes < meses) {
+                    acumuladoSinInteres += mensual;
+                    acumuladoConInteres = acumuladoConInteres * (1 + tasaMensual) + mensual;
+                }
+            }
+
+            const ctx = document.getElementById('inversionChart').getContext('2d');
+            
+            if (inversionChart) {
+                inversionChart.destroy();
+            }
+
+            inversionChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Con inversión (' + rendimiento + '% anual)',
+                        data: dataConInteres,
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6
+                    }, {
+                        label: 'Sin inversión (0%)',
+                        data: dataSinInteres,
+                        borderColor: '#64748b',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        fill: false,
+                        pointRadius: 0,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: { family: 'Inter', size: 12, weight: '500' },
+                                color: '#cbd5e1',
+                                padding: 15,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#cbd5e1',
+                            borderColor: 'rgba(99, 102, 241, 0.3)',
+                            borderWidth: 1,
+                            padding: 12,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + formatEuro(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
+                            ticks: {
+                                callback: function(value) { return formatEuro(value); },
+                                font: { family: 'Inter', size: 11 },
+                                color: '#94a3b8'
+                            }
+                        },
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
+                            ticks: { font: { family: 'Inter', size: 11 }, color: '#94a3b8' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function generarGraficoEscenarios(ahorroActual) {
+            const labels = [];
+            const escenarios = [
+                { nombre: 'Ahorro actual', ahorro: ahorroActual, color: '#6366f1' },
+                { nombre: 'Ahorro +20%', ahorro: ahorroActual * 1.2, color: '#14b8a6' },
+                { nombre: 'Ahorro +50%', ahorro: ahorroActual * 1.5, color: '#10b981' },
+                { nombre: 'Reducir gastos 10%', ahorro: ahorroActual + (getNumericValue('ingreso1') + getNumericValue('ingreso2')) * 0.1, color: '#f59e0b' }
+            ];
+
+            const datasets = escenarios.map(escenario => {
+                const data = [];
+                let acumulado = 0;
+                
+                for (let año = 0; año <= 10; año++) {
+                    if (año === 0) labels.push('Hoy');
+                    else if (labels.length <= 11) labels.push(`Año ${año}`);
+                    
+                    data.push(acumulado);
+                    acumulado += escenario.ahorro * 12;
+                }
+
+                return {
+                    label: escenario.nombre + ' (' + formatEuro(escenario.ahorro) + '/mes)',
+                    data: data,
+                    borderColor: escenario.color,
+                    backgroundColor: escenario.color + '20',
+                    borderWidth: 3,
+                    fill: false,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 6
+                };
+            });
+
+            const ctx = document.getElementById('escenariosChart').getContext('2d');
+            
+            if (escenariosChart) {
+                escenariosChart.destroy();
+            }
+
+            escenariosChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels.slice(0, 11),
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: { family: 'Inter', size: 12, weight: '500' },
+                                color: '#cbd5e1',
+                                padding: 15,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#cbd5e1',
+                            borderColor: 'rgba(99, 102, 241, 0.3)',
+                            borderWidth: 1,
+                            padding: 12,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label.split('(')[0] + ': ' + formatEuro(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
+                            ticks: {
+                                callback: function(value) { return formatEuro(value); },
+                                font: { family: 'Inter', size: 11 },
+                                color: '#94a3b8'
+                            }
+                        },
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
+                            ticks: { font: { family: 'Inter', size: 11 }, color: '#94a3b8' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function generarGraficoProyeccion(ahorroMensual, objetivo, maxMeses) {
+            const labels = [];
+            const data = [];
+            let acumulado = 0;
+
+            // Generar hasta 60 meses o el objetivo, lo que sea menor
+            const mesesMostrar = Math.min(maxMeses, 60);
+
+            for (let mes = 0; mes <= mesesMostrar; mes++) {
+                if (mes === 0) {
+                    labels.push('Inicio');
+                } else if (mes % 6 === 0) {
+                    labels.push(`${mes}m`);
+                } else {
+                    labels.push('');
+                }
+                data.push(acumulado);
+                acumulado += ahorroMensual;
+            }
+
+            const ctx = document.getElementById('proyeccionChart').getContext('2d');
+            
+            if (proyeccionChart) {
+                proyeccionChart.destroy();
+            }
+
+            proyeccionChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Ahorro Acumulado',
+                        data: data,
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: '#6366f1'
+                    }, {
+                        label: 'Objetivo',
+                        data: Array(labels.length).fill(objetivo),
+                        borderColor: '#ec4899',
+                        borderWidth: 2,
+                        borderDash: [10, 5],
+                        fill: false,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    family: 'Inter',
+                                    size: 12,
+                                    weight: '500'
+                                },
+                                color: '#cbd5e1',
+                                padding: 15,
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#cbd5e1',
+                            borderColor: 'rgba(99, 102, 241, 0.3)',
+                            borderWidth: 1,
+                            padding: 12,
+                            cornerRadius: 8,
+                            titleFont: {
+                                family: 'Sora',
+                                size: 13,
+                                weight: '600'
+                            },
+                            bodyFont: {
+                                family: 'Inter',
+                                size: 12
+                            },
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + formatEuro(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return formatEuro(value);
+                                },
+                                font: {
+                                    family: 'Inter',
+                                    size: 11
+                                },
+                                color: '#94a3b8'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                font: {
+                                    family: 'Inter',
+                                    size: 11
+                                },
+                                color: '#94a3b8'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function generarGraficoGastos(expensesData, ahorro) {
+            if (expensesData.length === 0 && ahorro <= 0) return;
+
+            const labels = expensesData.map(e => e.name);
+            const data = expensesData.map(e => e.amount);
+            
+            if (ahorro > 0) {
+                labels.push('Ahorro');
+                data.push(ahorro);
+            }
+
+            const ctx = document.getElementById('gastosChart').getContext('2d');
+            
+            if (gastosChart) {
+                gastosChart.destroy();
+            }
+
+            const colors = [
+                '#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#ef4444', 
+                '#8b5cf6', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
+            ];
+
+            gastosChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors.slice(0, data.length),
+                        borderColor: '#0f172a',
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                font: {
+                                    family: 'Inter',
+                                    size: 11,
+                                    weight: '500'
+                                },
+                                color: '#cbd5e1',
+                                padding: 12,
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#cbd5e1',
+                            borderColor: 'rgba(99, 102, 241, 0.3)',
+                            borderWidth: 1,
+                            padding: 12,
+                            cornerRadius: 8,
+                            titleFont: {
+                                family: 'Sora',
+                                size: 13,
+                                weight: '600'
+                            },
+                            bodyFont: {
+                                family: 'Inter',
+                                size: 12
+                            },
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                    return context.label + ': ' + formatEuro(context.parsed) + ' (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function generarGraficoPatrimonio(ahorroMensual) {
+            const labels = [];
+            const data = [];
+            let acumulado = 0;
+
+            for (let año = 0; año <= 10; año++) {
+                labels.push(año === 0 ? 'Hoy' : `Año ${año}`);
+                data.push(acumulado);
+                acumulado += ahorroMensual * 12;
+            }
+
+            const ctx = document.getElementById('patrimonioChart').getContext('2d');
+            
+            if (patrimonioChart) {
+                patrimonioChart.destroy();
+            }
+
+            patrimonioChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Patrimonio Acumulado',
+                        data: data,
+                        backgroundColor: labels.map((_, i) => {
+                            const opacity = 0.4 + (i * 0.06);
+                            return `rgba(99, 102, 241, ${Math.min(opacity, 1)})`;
+                        }),
+                        borderColor: '#6366f1',
+                        borderWidth: 0,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#cbd5e1',
+                            borderColor: 'rgba(99, 102, 241, 0.3)',
+                            borderWidth: 1,
+                            padding: 12,
+                            cornerRadius: 8,
+                            titleFont: {
+                                family: 'Sora',
+                                size: 13,
+                                weight: '600'
+                            },
+                            bodyFont: {
+                                family: 'Inter',
+                                size: 12
+                            },
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Patrimonio: ' + formatEuro(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return formatEuro(value);
+                                },
+                                font: {
+                                    family: 'Inter',
+                                    size: 11
+                                },
+                                color: '#94a3b8'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false,
+                                drawBorder: false
+                            },
+                            ticks: {
+                                font: {
+                                    family: 'Inter',
+                                    size: 11
+                                },
+                                color: '#94a3b8'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function formatEuro(amount) {
+            return new Intl.NumberFormat('es-ES', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(amount) + ' €';
+        }
+
+        function formatNumber(num) {
+            return new Intl.NumberFormat('es-ES').format(num);
+        }
+
+        // Auto-calcular cuando se cambian los inputs principales
+        document.addEventListener('input', function(e) {
+            if (e.target.matches('#ingreso1, #ingreso2, .expense-amount')) {
+                // Pequeño delay para que el formateo se complete
+                setTimeout(calcular, 100);
+            }
+        });
+    </script>
+</body>
+</html>
